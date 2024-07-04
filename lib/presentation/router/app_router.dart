@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:posts_test/presentation/screens/post_details/post_datail_bloc.dart';
+import 'package:posts_test/presentation/screens/posts_list/posts_list_bloc.dart';
 import 'package:posts_test/presentation/screens/posts_list/posts_list_screen.dart';
-import 'package:posts_test/presentation/screens/posts_list/posts_list_vm.dart';
 
 import '../screens/post_details/post_details_screen.dart';
 
@@ -23,8 +24,7 @@ class RouterHelper {
   GoRouteInformationParser get routeInformationParser =>
       router.routeInformationParser;
 
-
-  static const String postsListsPath = '/posts';
+  static const String postsListsPath = '/posts_list';
   static const String postDeatailsPath = '/post_details';
 
   factory RouterHelper() {
@@ -37,13 +37,24 @@ class RouterHelper {
       GoRoute(
           path: postsListsPath,
           pageBuilder: (context, state) {
-            return getPage(child: PostsListScreen(vm: PostsListVM()), state: state);
+            return getPage(
+                child: PostsListScreen(
+                  postsListBloc: PostsListBloc(),
+                ),
+                state: state);
           }),
-      // Экран детализорованного поста
+      // Экран детализорованного поста с комменатриями
       GoRoute(
           path: postDeatailsPath,
           pageBuilder: (context, state) {
-            return getPage(child: const PostDetailsScreen(), state: state);
+            final extra = state.extra as Map<String, dynamic>;
+            return getPage(
+                child: PostDetailsScreen(
+                  postIndex: extra['postIndex'],
+                  postDetailsBloc: PostDetailsBloc(),
+                  postsListBloc: PostsListBloc(),
+                ),
+                state: state);
           }),
     ];
 

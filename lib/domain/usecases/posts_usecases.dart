@@ -7,11 +7,11 @@ class PostsUsecases {
   PostsUsecases({required this.repository});
 
   Future<List<PostEntity>> getAll() async {
-    // try {
+    try {
       return await repository.getAll();
-    // } catch (e) {
-    //   throw Exception('Ошибка загрузки постов');
-    // }
+    } catch (e) {
+      throw Exception('Ошибка загрузки постов');
+    }
   }
 
   Future<List<CommentEntity>> getPostComments(int postId) async {

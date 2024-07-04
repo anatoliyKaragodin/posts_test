@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:posts_test/domain/entities/mapper/entities_mapper.dart';
-import 'package:posts_test/presentation/screens/posts_list/posts_list_vm.dart';
+import 'package:posts_test/presentation/screens/posts_list/posts_list_bloc.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../widgets/common/app_error_widget.dart';
+import '../../widgets/posts_list/post_widget.dart';
+import 'posts_list_events.dart';
 
 class PostsListScreen extends StatelessWidget {
-  const PostsListScreen({super.key, required this.vm});
+  const PostsListScreen({super.key, required this.postsListBloc});
 
-  final IPostsListVM vm;
+  final IPostsListBloc postsListBloc;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<List<PostEntity>>(
-        stream: vm.postsStream,
+        stream: postsListBloc.postsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildShimmerEffect();
+            return const _ShimmerWidget();
           }
 
           if (snapshot.hasError) {
-            // return _buildShimmerEffect();
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return AppErrorWidget(errorText: snapshot.error.toString());
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -30,62 +32,35 @@ class PostsListScreen extends StatelessWidget {
 
           final posts = snapshot.data!;
 
-          return ListView.builder(
-            scrollDirection: Axis.vertical,
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final post = posts[index];
-              return Card(
-                child: Container(
-                  width: 300,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (post.imageUrl.isNotEmpty)
-                        Image.network(
-                          post.imageUrl,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 200,
-                              color: Colors.grey,
-                              child: const Center(child: Text('Image not available')),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        (loadingProgress.expectedTotalBytes ??
-                                            1)
-                                    : null,
-                              ),
-                            );
-                          },
-                        )
-                      else
-                        Container(
-                          height: 600,
-                          color: Colors.grey,
-                          child: const Center(child: Text('No Image')),
-                        ),
-                      const SizedBox(height: 10),
-                      Text(post.body),
-                    ],
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView.builder(
+              scrollDirection: Axis.vertical,
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                final post = posts[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: PostWidget(
+                    post: post,
+                    onTap: () => postsListBloc.eventSink.add(
+                        GoToPostDetails(postIndex: index, postId: post.id)),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
     );
   }
+}
 
-  Widget _buildShimmerEffect() {
+class _ShimmerWidget extends StatelessWidget {
+  const _ShimmerWidget();
+
+  @override
+  Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
       itemCount: 5,
@@ -109,15 +84,18 @@ class PostsListScreen extends StatelessWidget {
                     ),
                   ),
                   Column(
-                    children: List.generate(8, (index) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Container(
-                      color: Colors.white,
-                      width: double.infinity,
-                      height: 10,
+                    children: List.generate(
+                      8,
+                      (index) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Container(
+                          color: Colors.white,
+                          width: double.infinity,
+                          height: 10,
+                        ),
+                      ),
                     ),
-                  ),
-                  ),)
+                  )
                 ],
               ),
             ));
